@@ -1,42 +1,29 @@
 # AIC8800 D80 Linux Driver
 
-Linux USB Wi-Fi driver for the AIC8800 D80 chipset, vendor version 6.4.3.0.
-Imported from `aic8800d80fdrvpackage.deb` and patched for robustness.
+AIC8800 D80 USB Wi-Fi driver, vendor version 6.4.3.0.
 
 [中文说明](README.zh-CN.md)
 
-## Layout
+## Scope
 
-| Path | Description |
-|---|---|
-| `drivers/aic8800/aic_load_fw/` | USB firmware loader |
-| `drivers/aic8800/aic8800_fdrv/` | cfg80211 driver |
-| `fw/aic8800D80/` | firmware and calibration files |
-| `tools/aic.rules` | udev rule |
-| `install_setup.sh` | installs firmware and udev rule |
-| `uninstall_setup.sh` | removes firmware and udev rule |
+AIC8800 D80 USB Wi-Fi modules, including devices with USB ID `a69c:8d80`
+(AIC) and `2357:014b` (TP-Link AIC 8800D80).
 
-## Local patches
+Verified on:
 
-Applied 2026-11-13 on an NVIDIA Jetson (kernel 5.10.104-tegra, aarch64):
+- NVIDIA Jetson, kernel 5.10.104-tegra, aarch64
+- Ubuntu 22.04, kernel 6.8.0-138-generic, x86_64
 
-- `rwnx_cmds.c`: a command timeout no longer moves the command manager into a
-  permanent `RWNX_CMD_MGR_STATE_CRASHED` state. The timed-out command is
-  removed from the queue and released. Three consecutive timeouts schedule a
-  USB device reset.
-- `aicwf_usb.c`: adds a reset work item that calls `usb_queue_reset_device()`,
-  forcing re-enumeration and firmware reload.
-- `rwnx_msg_tx.c`: scan request failures clear `scanning` and `scan_request`;
-  `rwnx_send_msg()` returns `-ENODEV` when the USB bus is down.
-- `rwnx_main.c`: scan, connect and disconnect failure paths roll back driver
-  state; a 15 s scan watchdog aborts a stuck scan through
-  `cfg80211_scan_done()`; removed `WARN_ON()` from recoverable state-machine
-  paths.
-- `rwnx_msg_rx.c`: cancels the scan watchdog on `SCAN_DONE_IND`.
+## Changes in this version
+
+- A command timeout no longer leaves the command manager in a permanent
+  crashed state; the timed-out command is removed from the queue and released.
+  Three consecutive timeouts reset the USB device.
+- Scan, connect and disconnect failures roll back driver state.
+- A 15 s scan watchdog aborts a stuck scan through `cfg80211_scan_done()`.
+- `rwnx_send_msg()` returns `-ENODEV` when the USB bus is down.
 
 ## Build
-
-Tested with kernel 5.10.104-tegra:
 
 ```bash
 cd drivers/aic8800
@@ -44,15 +31,11 @@ make
 sudo make install
 ```
 
-`make install` copies the modules to
-`/lib/modules/$(uname -r)/kernel/drivers/net/wireless/aic8800/` and runs
-`depmod`.
-
 ## Firmware
 
 ```bash
 sudo ./install_setup.sh
 ```
 
-The script copies `fw/aic8800D80` to `/lib/firmware/`, installs
-`tools/aic.rules` and triggers udev.
+The script installs `fw/aic8800D80` to `/lib/firmware/` and the udev rule
+`tools/aic.rules`.
