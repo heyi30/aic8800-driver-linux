@@ -3,6 +3,8 @@
 Linux USB Wi-Fi driver for the AIC8800 D80 chipset, vendor version 6.4.3.0.
 Imported from `aic8800d80fdrvpackage.deb` and patched for robustness.
 
+[中文说明](README.zh-CN.md)
+
 ## Layout
 
 | Path | Description |
